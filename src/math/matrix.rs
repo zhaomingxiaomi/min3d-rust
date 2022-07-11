@@ -34,6 +34,24 @@ impl Matrix {
             w: v.x * self.m[3][0] + v.y * self.m[3][1] + v.z * self.m[3][2] + v.w * self.m[3][3]
         }
     }
+
+    pub fn mul(&self, rhs: &Self) -> Matrix {
+        let mut mul_r = Vec::new();
+        for i in 0..self.m.len() {
+            let mut cur = Vec::new();
+            for j in 0..self.m.len() {
+                cur.push(self.m[i][0] * rhs.m[0][j]
+                        + self.m[i][1] * rhs.m[1][j]
+                        + self.m[i][2] * rhs.m[2][j]
+                        + self.m[i][3] * rhs.m[3][j]);
+            }
+            mul_r.push(cur);
+        }
+
+        Matrix {
+            m: mul_r
+        }
+    }
 }
 
 impl Add for Matrix {
