@@ -1,9 +1,9 @@
+use std::fmt;
 use std::ops::Add;
 use std::ops::Sub;
 use std::ops::Mul;
 
 use super::vector::Vector;
-
 
 pub struct Matrix {
     pub m: Vec<Vec<f32>>
@@ -21,7 +21,7 @@ impl Matrix {
             m: vec![vec![1.0, 0.0, 0.0, 0.0], 
                     vec![0.0, 1.0, 0.0, 0.0],
                     vec![0.0, 0.0, 1.0, 0.0],
-                    vec![0.0, 0.0, 0.0, 0.0],
+                    vec![0.0, 0.0, 0.0, 1.0],
                     ]
         }
     }

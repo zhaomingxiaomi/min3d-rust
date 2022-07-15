@@ -1,18 +1,47 @@
 use std::ops::{Add, Sub};
 
 use super::matrix::Matrix;
+use super::utils::interpolation;
 
+#[derive(Clone, Copy)]
 pub struct Point2f {
     pub x: f32,
     pub y: f32
 }
 
+impl Default for Point2f {
+    fn default() -> Self {
+        Self { x: Default::default(), y: Default::default() }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Color {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Self { r: Default::default(), g: Default::default(), b: Default::default() }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct Point3f {
     pub x: f32,
     pub y: f32,
     pub z: f32
 }
 
+impl Default for Point3f {
+    fn default() -> Self {
+        Self { x: Default::default(), y: Default::default(), z: Default::default() }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
@@ -23,7 +52,7 @@ pub struct Vector {
 
 
 impl Vector {
-    fn new(x: f32, y: f32, z: f32, w: f32) -> Vector {
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Vector {
         Vector {
             x, y, z, w
         }
@@ -44,14 +73,21 @@ impl Vector {
         self.x = self.x / l;
         self.y = self.y / l;
         self.z = self.z / l;
-        self.w = self.w / l;
+    }
+
+    pub fn divide_w(&mut self) -> Self {
+        self.x /= self.w;
+        self.y /= self.w;
+        self.z /= self.w;
+        self.w = 1.0;
+        *self
     }
 
     pub fn cross_product(&self, v: &Vector) -> Vector {
         Vector {
-            x: self.y * v.z - self.z * v.x,
+            x: self.y * v.z - self.z * v.y,
             y: self.z * v.x - self.x * v.z,
-            z: self.x * v.y - self.z * v.x,
+            z: self.x * v.y - self.y * v.x,
             w: 1.0
         }
     }
@@ -89,6 +125,15 @@ impl Vector {
 
 }
 
+pub fn vector_interpolation(v1: &Vector, v2: &Vector, t: f32) -> Vector{
+    Vector { 
+        x: interpolation(v1.x, v2.x, t), 
+        y: interpolation(v1.y, v2.y, t), 
+        z: interpolation(v1.z, v2.z, t),
+        w: 1.0
+    }
+}
+
 impl Add for Vector {
     type Output = Vector;
 
@@ -112,5 +157,11 @@ impl Sub for Vector {
             z: self.z - rhs.z,
             w: 1.0
         }
+    }
+}
+
+impl Default for Vector {
+    fn default() -> Self {
+        Self { x: Default::default(), y: Default::default(), z: Default::default(), w: Default::default() }
     }
 }
