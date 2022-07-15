@@ -5,7 +5,7 @@ rust软渲染器
 
 
 
-
-inspire by 
-GAMES101
+  
+inspire by：  
+GAMES101  
 https://github.com/skywind3000/mini3d
