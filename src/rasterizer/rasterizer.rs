@@ -196,25 +196,26 @@ fn trapezoid_init_scanline(trap: &Trapezoid, y: i32) -> Scanline {
 
 fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, trap: &Trapezoid, scanline: &Scanline) {
     let start = trap.l.as_ref().unwrap();
-    let mut R = start.color.r;
-    let mut G = start.color.g;
-    let mut B = start.color.b;
+    let mut r = start.color.r;
+    let mut g = start.color.g;
+    let mut b = start.color.b;
     let mut w = start.ws;
 
 
     for i in 0..scanline.w {
-        let cur_r = clamp((255.0 * R / w) as i32, 0, 255);
-        let cur_g = clamp((255.0 * G / w) as i32, 0, 255);
-        let cur_b = clamp((255.0 * B / w) as i32, 0, 255);
+        if scanline.x + i < 0 || scanline.x + i >= width {continue;}
+        let cur_r = clamp((255.0 * r / w) as i32, 0, 255);
+        let cur_g = clamp((255.0 * g / w) as i32, 0, 255);
+        let cur_b = clamp((255.0 * b / w) as i32, 0, 255);
 
         image[((width * scanline.y + scanline.x + i) * 4) as usize] = cur_b as u8;
         image[((width * scanline.y + scanline.x + i) * 4 + 1) as usize] = cur_g as u8;
         image[((width * scanline.y + scanline.x + i) * 4 + 2) as usize] = cur_r as u8;
         image[((width * scanline.y + scanline.x + i) * 4 + 3) as usize] = 255;
 
-        R += scanline.step.color.r;
-        G += scanline.step.color.g;
-        B += scanline.step.color.b;
+        r += scanline.step.color.r;
+        g += scanline.step.color.g;
+        b += scanline.step.color.b;
         w += scanline.step.ws;
     }
 }
@@ -241,11 +242,11 @@ pub struct Rasterizer {
     mvp: Matrix,
     
     //view port
-    width: i32,
-    height: i32,
+    //width: i32,
+    //height: i32,
 
     //image
-    buf: Option<Vec<u8>>
+    //buf: Option<Vec<u8>>
 }
 
 impl Rasterizer {
@@ -255,9 +256,6 @@ impl Rasterizer {
             view: Matrix::identity(),
             projection: Matrix::identity(),
             mvp: Matrix::identity(),
-            width: 0,
-            height: 0,
-            buf: None
         }
     }
 
@@ -266,34 +264,16 @@ impl Rasterizer {
 
     }
 
-    fn get_view(&self) -> &Matrix {
-        &self.view
-    }
-
     pub fn set_model(&mut self, m: Matrix) {
         self.model = m;
-    }
-
-    fn get_model(&self) -> &Matrix {
-        &self.model
     }
 
     pub fn set_projection(&mut self, m: Matrix) {
         self.projection = m;
     }
 
-    fn get_projection(&self) -> &Matrix {
-        &self.projection
-    }
-
     pub fn compute_mvp(&mut self) {
         self.mvp = self.projection.mul(&self.view).mul(&self.model);
-        println!("{:?}", self.mvp.m);
-    }
-
-    fn set_view_port(&mut self, w: i32, h: i32) {
-        self.width = w;
-        self.height = h;
     }
 }
 
@@ -314,12 +294,12 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     triangle.set_vertexs(vec![p1.divide_w(), p2.divide_w(), p3.divide_w()]);
     let mut traps = trapezoid_init(&triangle.vertexs[0], &triangle.vertexs[1], &triangle.vertexs[2]);
     if traps.len() >= 1 {
-        let mut trap = &mut traps[0];
+        let trap = &mut traps[0];
         trapezoid_draw(image, width, height, trap);
     }
 
     if traps.len() >= 2 {
-        let mut trap = &mut traps[1];
+        let trap = &mut traps[1];
         trapezoid_draw(image, width, height, trap);
     }
 }
@@ -343,15 +323,23 @@ pub fn get_view_port(width: f32, height: f32) -> Matrix {
     Matrix { 
         m: vec![
             vec![width/2.0, 0.0, 0.0, width/2.0],
-            vec![0.0, height/2.0, 0.0, height/2.0],
+            vec![0.0, -height/2.0, 0.0, height/2.0],
             vec![0.0, 0.0, 1.0, 0.0],
             vec![0.0, 0.0, 0.0, 1.0],
         ]
     }
 }
 
-pub fn get_model_matrix() -> Matrix {
-    Matrix::identity()
+pub fn get_model_matrix(angel: f32) -> Matrix {
+    let r = std::f32::consts::PI * angel / 180.0;
+    Matrix {
+        m: vec![
+            vec![r.cos(), 0.0, r.sin(), 0.0],
+            vec![0.0, 1.0, 0.0, 0.0],
+            vec![-r.sin(), 0.0, r.cos(), 0.0],
+            vec![0.0, 0.0, 0.0, 1.0],
+        ]
+    }
 }
 
 pub fn get_ortho_projection_matrix(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Matrix {
@@ -375,7 +363,7 @@ pub fn get_ortho_projection_matrix(l: f32, r: f32, t: f32, b: f32, n: f32, f: f3
 pub fn get_presp_projection_matrix(eye_fov: f32, aspect_ratio: f32, near: f32, far: f32) -> Matrix {
     let angle = eye_fov * std::f32::consts::PI / 180.0;
     let height = near * angle.tan();
-    let width = height * aspect_ratio;
+    //let width = height * aspect_ratio;
 
     let t = near.abs() * (angle/2.0).tan();
     let r = t * aspect_ratio;

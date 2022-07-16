@@ -52,9 +52,9 @@ impl Sandbox for Example {
 		for i in 0..256 {
 			for j in 0..256 {
                 //if i < 128 && j < 128 {
-                    image.push(255u8);
-                    image.push(255u8);
-                    image.push(255u8);
+                    image.push(100u8);
+                    image.push(100u8);
+                    image.push(100u8);
                     image.push(255u8);
                 //}
 			}
@@ -67,13 +67,13 @@ impl Sandbox for Example {
         ]);
 
         triangle.set_vertexs(vec![
-            Vector { x: 2.0, y: 0.0, z: -2.0, w: 1.0 },
+            Vector { x: 2.0, y:-2.0, z: -2.0, w: 1.0 },
             Vector { x: 0.0, y: 2.0, z: -2.0, w: 1.0 },
-            Vector { x: -3.0, y: 0.0, z: -2.0, w: 1.0 }
+            Vector { x: -3.0, y: -2.0, z: -2.0, w: 1.0 }
         ]);
 
         let mut rasterizer = Rasterizer::new();
-        rasterizer.set_model(get_model_matrix());
+        rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 60.0 / 50.0));
         rasterizer.set_view(get_view_matrix(
             Vector::new(0.0, 0.0, 5.0, 1.0),
             Vector::new(0.0, 0.0, 0.0, 1.0),
@@ -83,7 +83,6 @@ impl Sandbox for Example {
         rasterizer.set_projection(get_presp_projection_matrix(60.0, 1.0, -0.1, -50.0));
         rasterizer.compute_mvp();
         draw_trangle(&rasterizer, &mut image, 256, 256, triangle);
-
 
         let handle = Handle::from_pixels(256, 256, image);
         let content = Column::new()
