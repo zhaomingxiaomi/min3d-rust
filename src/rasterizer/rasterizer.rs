@@ -158,6 +158,9 @@ fn trapezoid_interpation(trap: &mut Trapezoid, y: f32) {
 
     trap.l = Some(vertex_interp(&trap.l1.unwrap(), &trap.l2.unwrap(), y1));
     trap.r = Some(vertex_interp(&trap.r1.unwrap(), &trap.r2.unwrap(), y2));
+
+    println!("y1: {:?}", y1);
+    println!("y2: {:?}", y2);
 }
 
 fn trapezoid_get_step(trap: &Trapezoid) -> Vertex {
