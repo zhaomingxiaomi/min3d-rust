@@ -149,18 +149,16 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
 
     return traps;
 }
-
 fn trapezoid_interpation(trap: &mut Trapezoid, y: f32) {
+
     let s1 = trap.l2.unwrap().v.y - trap.l1.unwrap().v.y;
     let s2 = trap.r2.unwrap().v.y - trap.r1.unwrap().v.y;
-    let y1 = (y - trap.l1.unwrap().v.y) / s1;
-    let y2 = (y - trap.r1.unwrap().v.y) / s2;
+    let y1 = clamp((y - trap.l1.unwrap().v.y) / s1, 0.0, 1.0);
+    let y2 = clamp((y - trap.r1.unwrap().v.y) / s2, 0.0, 1.0);
+
 
     trap.l = Some(vertex_interp(&trap.l1.unwrap(), &trap.l2.unwrap(), y1));
     trap.r = Some(vertex_interp(&trap.r1.unwrap(), &trap.r2.unwrap(), y2));
-
-    println!("y1: {:?}", y1);
-    println!("y2: {:?}", y2);
 }
 
 fn trapezoid_get_step(trap: &Trapezoid) -> Vertex {
