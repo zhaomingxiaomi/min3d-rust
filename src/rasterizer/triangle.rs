@@ -53,7 +53,12 @@ impl Triangle {
     pub fn set_vertexs(&mut self, v: Vec<Vector>) {
         for i in 0..v.len() {
             self.vertexs[i].v = v[i];
-            self.vertexs[i].ws = v[i].w;
+        }
+    }
+
+    pub fn set_ws(&mut self, w: Vec<f32>) {
+        for i in 0..w.len() {
+            self.vertexs[i].ws = 1.0 / w[i];
         }
     }
 

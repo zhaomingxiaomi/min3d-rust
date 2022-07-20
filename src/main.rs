@@ -59,17 +59,30 @@ impl Sandbox for Example {
                 //}
 			}
 		}
-        let mut triangle = Triangle::new();
-        triangle.set_colors(vec![
+        let mut triangle1 = Triangle::new();
+        triangle1.set_colors(vec![
             Color {r: 1.0, g:0.0, b:0.0}, 
-            Color {r: 0.0, g:1.0, b:0.0},
-            Color {r: 0.0, g:0.0, b:1.0},
+            Color {r: 1.0, g:0.0, b:0.0},
+            Color {r: 1.0, g:0.0, b:0.0},
         ]);
 
-        triangle.set_vertexs(vec![
+        triangle1.set_vertexs(vec![
             Vector { x: 2.0, y:-2.0, z: -2.0, w: 1.0 },
             Vector { x: 0.0, y: 2.0, z: -2.0, w: 1.0 },
             Vector { x: -3.0, y: -2.0, z: -2.0, w: 1.0 }
+        ]);
+
+        let mut triangle2 = Triangle::new();
+        triangle2.set_colors(vec![
+            Color {r: 0.0, g:1.0, b:0.0}, 
+            Color {r: 0.0, g:1.0, b:0.0},
+            Color {r: 0.0, g:1.0, b:0.0},
+        ]);
+
+        triangle2.set_vertexs(vec![
+            Vector { x: 1.0, y:-2.0, z: -3.0, w: 1.0 },
+            Vector { x: 0.0, y: 4.0, z: -3.0, w: 1.0 },
+            Vector { x: -3.0, y: -2.0, z: -3.0, w: 1.0 }
         ]);
 
         let mut rasterizer = Rasterizer::new();
@@ -82,7 +95,11 @@ impl Sandbox for Example {
 
         rasterizer.set_projection(get_presp_projection_matrix(60.0, 1.0, -0.1, -50.0));
         rasterizer.compute_mvp();
-        draw_trangle(&rasterizer, &mut image, 256, 256, triangle);
+
+        let mut zbuf: Vec<f32> = vec![-1.0; 256*256];
+
+        draw_trangle(&rasterizer, &mut image, &mut zbuf, 256, 256, triangle1);
+        draw_trangle(&rasterizer, &mut image, &mut zbuf , 256, 256, triangle2);
 
         let handle = Handle::from_pixels(256, 256, image);
         let content = Column::new()

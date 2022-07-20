@@ -1,5 +1,5 @@
 use crate::math::{matrix::Matrix, vector::{Vector, Point3f, Color, Point2f}, utils::clamp};
-use super::{triangle::{Triangle, Vertex, vertex_interp}, edge_walking::draw_trangle_edge_walking};
+use super::{triangle::{Triangle, Vertex, vertex_interp}, edge_walking::draw_trangle_edge_walking, edge_equation::draw_trangle_edge_equation};
 
 pub struct Rasterizer {
     model: Matrix,
@@ -45,6 +45,7 @@ impl Rasterizer {
 
 pub fn draw_trangle(rasterizer: &Rasterizer, 
     image: &mut Vec<u8>, 
+    zbuf: &mut Vec<f32>,
     width: i32, 
     height: i32, 
     mut triangle: Triangle) {
@@ -57,8 +58,10 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     let mut p2 = view_port.apply(&t2);
     let mut p3 = view_port.apply(&t3);
 
+    triangle.set_ws(vec![p1.w, p2.w, p3.w]);
     triangle.set_vertexs(vec![p1.divide_w(), p2.divide_w(), p3.divide_w()]);
-    draw_trangle_edge_walking(image, width, height, &triangle);
+    draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
+    //draw_trangle_edge_equation(image, width, height, &triangle);
 }
 
 pub fn get_view_matrix(eye: Vector, at: Vector, mut up: Vector) -> Matrix {

@@ -150,6 +150,7 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
 
     return traps;
 }
+
 fn trapezoid_interpation(trap: &mut Trapezoid, y: f32) {
 
     let s1 = trap.l2.unwrap().v.y - trap.l1.unwrap().v.y;
@@ -196,35 +197,40 @@ fn trapezoid_init_scanline(trap: &Trapezoid, y: i32) -> Scanline {
     }
 }
 
-fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, trap: &Trapezoid, scanline: &Scanline) {
+fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, zbuf: &mut Vec<f32>, trap: &Trapezoid, scanline: &Scanline) {
     let start = trap.l.as_ref().unwrap();
     let mut r = start.color.r;
     let mut g = start.color.g;
     let mut b = start.color.b;
-    let mut w = start.ws;
+    let mut ws = start.ws;
+    let mut w = scanline.w;
 
 
     for i in 0..scanline.w {
         if scanline.x + i < 0 || scanline.x + i >= width {continue;}
-        let cur_r = clamp((255.0 * r / w) as i32, 0, 255);
-        let cur_g = clamp((255.0 * g / w) as i32, 0, 255);
-        let cur_b = clamp((255.0 * b / w) as i32, 0, 255);
-
-        image[((width * scanline.y + scanline.x + i) * 4) as usize] = cur_b as u8;
-        image[((width * scanline.y + scanline.x + i) * 4 + 1) as usize] = cur_g as u8;
-        image[((width * scanline.y + scanline.x + i) * 4 + 2) as usize] = cur_r as u8;
-        image[((width * scanline.y + scanline.x + i) * 4 + 3) as usize] = 255;
+        let index = width * scanline.y + scanline.x + i;
+        if ws >= zbuf[index as usize] {
+            zbuf[index as usize] = ws;
+            let cur_r = clamp((255.0 * r) as i32, 0, 255);
+            let cur_g = clamp((255.0 * g) as i32, 0, 255);
+            let cur_b = clamp((255.0 * b) as i32, 0, 255);
+    
+            image[(index * 4) as usize] = cur_b as u8;
+            image[(index * 4 + 1) as usize] = cur_g as u8;
+            image[(index * 4 + 2) as usize] = cur_r as u8;
+            image[(index * 4 + 3) as usize] = 255;
+        }
 
         r += scanline.step.color.r;
         g += scanline.step.color.g;
         b += scanline.step.color.b;
-        w += scanline.step.ws;
+        ws += scanline.step.ws;
     }
 }
 
 fn trapezoid_draw(image: &mut Vec<u8>, 
     width: i32, 
-    height: i32, trap: &mut Trapezoid) {
+    height: i32, zbuf: &mut Vec<f32>, trap: &mut Trapezoid) {
     let t = trap.t.floor() as i32;
     let b = trap.b.floor() as i32;
 
@@ -232,20 +238,20 @@ fn trapezoid_draw(image: &mut Vec<u8>,
         if i >= 0 && i < height {
             trapezoid_interpation(trap, i as f32 + 0.5);
             let scanline = trapezoid_init_scanline(trap, i);
-            trapezoid_draw_scanline(image, width, trap, &scanline);
+            trapezoid_draw_scanline(image, width, zbuf, trap, &scanline);
         }
     }
 }
 
-pub fn draw_trangle_edge_walking(image: &mut Vec<u8>, width: i32, height: i32, triangle: &Triangle) {
+pub fn draw_trangle_edge_walking(image: &mut Vec<u8>, zbuf: &mut Vec<f32>, width: i32, height: i32, triangle: &Triangle) {
     let mut traps = trapezoid_init(&triangle.vertexs[0], &triangle.vertexs[1], &triangle.vertexs[2]);
     if traps.len() >= 1 {
         let trap = &mut traps[0];
-        trapezoid_draw(image, width, height, trap);
+        trapezoid_draw(image, width, height, zbuf, trap);
     }
 
     if traps.len() >= 2 {
         let trap = &mut traps[1];
-        trapezoid_draw(image, width, height, trap);
+        trapezoid_draw(image, width, height, zbuf, trap);
     }
 }
