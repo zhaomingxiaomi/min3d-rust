@@ -11,7 +11,6 @@ pub struct Vertex {
     pub color: Color,
     pub tex_coords: Point2f,
     pub normal: Point3f,
-    pub ws: f32
 }
 
 pub fn vertex_interp(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
@@ -31,14 +30,12 @@ pub fn vertex_interp(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
             y: interpolation(v1.normal.y, v2.normal.y, t),
             z: interpolation(v1.normal.y, v2.normal.y, t),
         },
-
-        ws: interpolation(v1.ws, v2.ws, t),
     }
 }
 
 impl Default for Vertex {
     fn default() -> Self {
-        Self { v: Default::default(), ws: Default::default(), color: Default::default(), tex_coords: Default::default(), normal: Default::default() }
+        Self { v: Default::default(), color: Default::default(), tex_coords: Default::default(), normal: Default::default() }
     }
 }
 
@@ -53,12 +50,6 @@ impl Triangle {
     pub fn set_vertexs(&mut self, v: Vec<Vector>) {
         for i in 0..v.len() {
             self.vertexs[i].v = v[i];
-        }
-    }
-
-    pub fn set_ws(&mut self, w: Vec<f32>) {
-        for i in 0..w.len() {
-            self.vertexs[i].ws = 1.0 / w[i];
         }
     }
 

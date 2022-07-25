@@ -179,7 +179,6 @@ fn trapezoid_get_step(trap: &Trapezoid) -> Vertex {
             b: (r.color.b - l.color.b) * w, 
         },
 
-        ws: (r.ws - l.ws) / w,
         tex_coords: Point2f::default(),
         normal: Point3f::default(),
     }
@@ -202,15 +201,14 @@ fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, zbuf: &mut Vec<f32>,
     let mut r = start.color.r;
     let mut g = start.color.g;
     let mut b = start.color.b;
-    let mut ws = start.ws;
-    let mut w = scanline.w;
+    let mut z = start.v.z;
 
 
     for i in 0..scanline.w {
         if scanline.x + i < 0 || scanline.x + i >= width {continue;}
         let index = width * scanline.y + scanline.x + i;
-        if ws >= zbuf[index as usize] {
-            zbuf[index as usize] = ws;
+        if z >= zbuf[index as usize] {
+            zbuf[index as usize] = z;
             let cur_r = clamp((255.0 * r) as i32, 0, 255);
             let cur_g = clamp((255.0 * g) as i32, 0, 255);
             let cur_b = clamp((255.0 * b) as i32, 0, 255);
@@ -224,7 +222,7 @@ fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, zbuf: &mut Vec<f32>,
         r += scanline.step.color.r;
         g += scanline.step.color.g;
         b += scanline.step.color.b;
-        ws += scanline.step.ws;
+        z += scanline.step.v.z;
     }
 }
 

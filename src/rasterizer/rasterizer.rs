@@ -46,6 +46,8 @@ impl Rasterizer {
 pub fn draw_trangle(rasterizer: &Rasterizer, 
     image: &mut Vec<u8>, 
     zbuf: &mut Vec<f32>,
+    near: f32,
+    far: f32,
     width: i32, 
     height: i32, 
     mut triangle: Triangle) {
@@ -58,10 +60,14 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     let mut p2 = view_port.apply(&t2);
     let mut p3 = view_port.apply(&t3);
 
-    triangle.set_ws(vec![p1.w, p2.w, p3.w]);
-    triangle.set_vertexs(vec![p1.divide_w(), p2.divide_w(), p3.divide_w()]);
-    draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
-    //draw_trangle_edge_equation(image, width, height, &triangle);
+    p1.divide_w(); p2.divide_w(); p3.divide_w();
+    p1.reset_z(near, far);
+    p2.reset_z(near, far);
+    p3.reset_z(near, far);
+
+    triangle.set_vertexs(vec![p1, p2, p3]);
+    //draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
+    draw_trangle_edge_equation(image, zbuf, width, height, &triangle);
 }
 
 pub fn get_view_matrix(eye: Vector, at: Vector, mut up: Vector) -> Matrix {
@@ -138,4 +144,25 @@ pub fn get_presp_projection_matrix(eye_fov: f32, aspect_ratio: f32, near: f32, f
             vec![0.0, 0.0, 1.0, 0.0],
         ]
     }
+
+    // let v = Vector { x: 1.0, y:-2.0, z: -3.0, w: 1.0 };
+    // let view = get_view_matrix(
+    //     Vector::new(0.0, 0.0, 5.0, 1.0),
+    //     Vector::new(0.0, 0.0, 0.0, 1.0),
+    //     Vector::new(0.0, 1.0, 0.0, 1.0)
+    // );
+
+    // let r1 = view.apply(&v);
+    
+    // let prop = Matrix {
+    //         m: vec![
+    //             vec![near.abs(), 0.0, 0.0, 0.0],
+    //             vec![0.0, near.abs(), 0.0, 0.0],
+    //             vec![0.0, 0.0, near.abs()+far.abs(), -near.abs()*far.abs()],
+    //             vec![0.0, 0.0, 1.0, 0.0],
+    //         ]
+    //     };
+    // let r2 = prop.apply(&r1);
+
+    //get_ortho_projection_matrix(l, r, t, b, near, far)
 }

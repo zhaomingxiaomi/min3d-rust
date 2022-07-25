@@ -4,6 +4,7 @@ use super::triangle::{Triangle, self};
 
 pub fn draw_trangle_edge_equation(
     image: &mut Vec<u8>,
+    zbuf: &mut Vec<f32>,
     width: i32,
     height: i32,
     triangle: &Triangle,
@@ -26,8 +27,14 @@ pub fn draw_trangle_edge_equation(
         for j in b.round() as i32..=t.round() as i32 {
             if inside_triangle(i as f32 + 0.5, j as f32 + 0.5, &p1, &p2, &p3) {
                 //println!("{:?}, {:?}", i, j);
+                
                 let (alpha, beta, gamma) =
                     compute_barycentric_2d(i as f32 + 0.5, j as f32 + 0.5, triangle);
+
+                let z = alpha * p1.z + beta * p2.z + gamma * p3.z;
+                if z < zbuf[(width * j + i) as usize] {continue;}
+
+                zbuf[(width * j + i) as usize] = z;
 
                 let a = triangle.vertexs[0].color;
                 let b = triangle.vertexs[1].color;

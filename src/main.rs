@@ -8,7 +8,7 @@ use iced::{
 use math::matrix::Matrix;
 use math::vector::{Vector, Color};
 
-use rasterizer::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle};
+use rasterizer::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix};
 use rasterizer::triangle::Triangle;
 
 pub fn main() -> iced::Result {
@@ -67,9 +67,9 @@ impl Sandbox for Example {
         ]);
 
         triangle1.set_vertexs(vec![
-            Vector { x: 2.0, y:-2.0, z: -2.0, w: 1.0 },
-            Vector { x: 0.0, y: 2.0, z: -2.0, w: 1.0 },
-            Vector { x: -3.0, y: -2.0, z: -2.0, w: 1.0 }
+            Vector { x: 2.0, y:-2.0, z: -1.0, w: 1.0 },
+            Vector { x: 0.0, y: 2.0, z: -20.0, w: 1.0 },
+            Vector { x: -3.0, y: -2.0, z: -5.0, w: 1.0 }
         ]);
 
         let mut triangle2 = Triangle::new();
@@ -80,9 +80,9 @@ impl Sandbox for Example {
         ]);
 
         triangle2.set_vertexs(vec![
-            Vector { x: 1.0, y:-2.0, z: -3.0, w: 1.0 },
-            Vector { x: 0.0, y: 4.0, z: -3.0, w: 1.0 },
-            Vector { x: -3.0, y: -2.0, z: -3.0, w: 1.0 }
+            Vector { x: 1.0, y:-2.0, z: -5.0, w: 1.0 },
+            Vector { x: 0.0, y: 4.0, z: -10.0, w: 1.0 },
+            Vector { x: -3.0, y: -2.0, z: -1.0, w: 1.0 }
         ]);
 
         let mut rasterizer = Rasterizer::new();
@@ -96,10 +96,10 @@ impl Sandbox for Example {
         rasterizer.set_projection(get_presp_projection_matrix(60.0, 1.0, -0.1, -50.0));
         rasterizer.compute_mvp();
 
-        let mut zbuf: Vec<f32> = vec![-1.0; 256*256];
+        let mut zbuf: Vec<f32> = vec![-51.0; 256*256];
 
-        draw_trangle(&rasterizer, &mut image, &mut zbuf, 256, 256, triangle1);
-        draw_trangle(&rasterizer, &mut image, &mut zbuf , 256, 256, triangle2);
+        draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 256, 256, triangle1);
+        draw_trangle(&rasterizer, &mut image, &mut zbuf , -0.1, -50.0, 256, 256, triangle2);
 
         let handle = Handle::from_pixels(256, 256, image);
         let content = Column::new()

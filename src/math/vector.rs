@@ -75,12 +75,18 @@ impl Vector {
         self.z = self.z / l;
     }
 
-    pub fn divide_w(&mut self) -> Self {
+    pub fn divide_w(&mut self) {
         self.x /= self.w;
         self.y /= self.w;
         self.z /= self.w;
         self.w = 1.0;
-        *self
+    }
+
+    pub fn reset_z(&mut self, n: f32, f: f32) {
+        let f1 = (n + f) / 2.0;
+        let f2 = (n - f) / 2.0;
+
+        self.z = f2 * self.z + f1;
     }
 
     pub fn cross_product(&self, v: &Vector) -> Vector {
