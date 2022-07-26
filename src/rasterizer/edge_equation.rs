@@ -25,33 +25,48 @@ pub fn draw_trangle_edge_equation(
 
     for i in l.round() as i32 ..=r.round() as i32 {
         for j in b.round() as i32..=t.round() as i32 {
-            if inside_triangle(i as f32 + 0.5, j as f32 + 0.5, &p1, &p2, &p3) {
-                //println!("{:?}, {:?}", i, j);
-                
-                let (alpha, beta, gamma) =
-                    compute_barycentric_2d(i as f32 + 0.5, j as f32 + 0.5, triangle);
+            //msaa
+            let pos = vec![
+                (0.25, 0.25),
+                (0.25, 0.75),
+                (0.75, 0.25),
+                (0.75, 0.75),
+                ];
 
-                let z = alpha * triangle.vertexs[0].v.z + beta * triangle.vertexs[1].v.z + gamma * triangle.vertexs[2].v.z;
-                if z < zbuf[(width * j + i) as usize] {continue;}
+            let mut count = 0.0;
+            let mut min_depth = 100.0;
+            for p in pos {
+                if inside_triangle(i as f32 + p.0, j as f32 + p.1, &p1, &p2, &p3) {
+                    let (alpha, beta, gamma) = compute_barycentric_2d(i as f32 + p.0, j as f32 + p.1, triangle);
+                    let z = alpha * triangle.vertexs[0].v.z + beta * triangle.vertexs[1].v.z + gamma * triangle.vertexs[2].v.z;
+                    min_depth = z.min(min_depth);
+                    count += 1.0;
+                }
+            }
 
-                zbuf[(width * j + i) as usize] = z;
-
+            if count > 0.0 && min_depth >= zbuf[(width * j + i) as usize] {
+                zbuf[(width * j + i) as usize] = min_depth;
                 let a = triangle.vertexs[0].color;
                 let b = triangle.vertexs[1].color;
                 let c = triangle.vertexs[2].color;
+                let (alpha, beta, gamma) = compute_barycentric_2d(i as f32 + 0.5, j as f32 + 0.5, triangle);
+
+                let origin_b = image[((width * j + i) * 4) as usize] as f32 / 255.0;
+                let origin_g = image[((width * j + i) * 4 + 1) as usize] as f32 / 255.0;
+                let origin_r = image[((width * j + i) * 4 + 2) as usize] as f32 / 255.0;
 
                 let cur_r = clamp(
-                    ((a.r * alpha + b.r * beta + gamma * c.r) * 255.0) as i32,
+                    (((a.r * alpha + b.r * beta + gamma * c.r) * count + origin_r * (4.0 - count)) * 255.0 / 4.0) as i32,
                     0,
                     255,
                 );
                 let cur_g = clamp(
-                    ((a.g * alpha + b.g * beta + gamma * c.g) * 255.0) as i32,
+                    (((a.g * alpha + b.g * beta + gamma * c.g) * count + origin_g * (4.0 - count)) * 255.0 / 4.0) as i32,
                     0,
                     255,
                 );
                 let cur_b = clamp(
-                    ((a.b * alpha + b.b * beta + gamma * c.b) * 255.0) as i32,
+                    (((a.b * alpha + b.b * beta + gamma * c.b)  * count + origin_b * (4.0 - count)) * 255.0 / 4.0) as i32,
                     0,
                     255,
                 );
@@ -61,6 +76,42 @@ pub fn draw_trangle_edge_equation(
                 image[((width * j + i) * 4 + 2) as usize] = cur_r as u8;
                 image[((width * j + i) * 4 + 3) as usize] = 255;
             }
+            // if inside_triangle(i as f32 + 0.5, j as f32 + 0.5, &p1, &p2, &p3) {
+            //     //println!("{:?}, {:?}", i, j);
+                
+            //     let (alpha, beta, gamma) =
+            //         compute_barycentric_2d(i as f32 + 0.5, j as f32 + 0.5, triangle);
+
+            //     let z = alpha * triangle.vertexs[0].v.z + beta * triangle.vertexs[1].v.z + gamma * triangle.vertexs[2].v.z;
+            //     if z < zbuf[(width * j + i) as usize] {continue;}
+
+            //     zbuf[(width * j + i) as usize] = z;
+
+            //     let a = triangle.vertexs[0].color;
+            //     let b = triangle.vertexs[1].color;
+            //     let c = triangle.vertexs[2].color;
+
+            //     let cur_r = clamp(
+            //         ((a.r * alpha + b.r * beta + gamma * c.r) * 255.0) as i32,
+            //         0,
+            //         255,
+            //     );
+            //     let cur_g = clamp(
+            //         ((a.g * alpha + b.g * beta + gamma * c.g) * 255.0) as i32,
+            //         0,
+            //         255,
+            //     );
+            //     let cur_b = clamp(
+            //         ((a.b * alpha + b.b * beta + gamma * c.b) * 255.0) as i32,
+            //         0,
+            //         255,
+            //     );
+
+            //     image[((width * j + i) * 4) as usize] = cur_b as u8;
+            //     image[((width * j + i) * 4 + 1) as usize] = cur_g as u8;
+            //     image[((width * j + i) * 4 + 2) as usize] = cur_r as u8;
+            //     image[((width * j + i) * 4 + 3) as usize] = 255;
+            // }
         }
     }
 }

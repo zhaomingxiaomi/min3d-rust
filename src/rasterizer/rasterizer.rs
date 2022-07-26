@@ -66,8 +66,8 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     p3.reset_z(near, far);
 
     triangle.set_vertexs(vec![p1, p2, p3]);
-    draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
-    //draw_trangle_edge_equation(image, zbuf, width, height, &triangle);
+    //draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
+    draw_trangle_edge_equation(image, zbuf, width, height, &triangle);
 }
 
 pub fn get_view_matrix(eye: Vector, at: Vector, mut up: Vector) -> Matrix {
