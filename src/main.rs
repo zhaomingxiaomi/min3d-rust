@@ -67,9 +67,9 @@ impl Sandbox for Example {
         ]);
 
         triangle1.set_vertexs(vec![
-            Vector { x: 2.0, y:-2.0, z: -1.0, w: 1.0 },
+            Vector { x: 2.0, y:-2.0, z: -2.0, w: 1.0 },
             Vector { x: 0.0, y: 2.0, z: -20.0, w: 1.0 },
-            Vector { x: -3.0, y: -2.0, z: -5.0, w: 1.0 }
+            Vector { x: -3.0, y: -2.0, z: -2.0, w: 1.0 }
         ]);
 
         let mut triangle2 = Triangle::new();
@@ -80,9 +80,9 @@ impl Sandbox for Example {
         ]);
 
         triangle2.set_vertexs(vec![
-            Vector { x: 1.0, y:-2.0, z: -5.0, w: 1.0 },
+            Vector { x: 1.0, y:-2.0, z: -3.0, w: 1.0 },
             Vector { x: 0.0, y: 4.0, z: -10.0, w: 1.0 },
-            Vector { x: -3.0, y: -2.0, z: -1.0, w: 1.0 }
+            Vector { x: -3.0, y: -2.0, z: -3.0, w: 1.0 }
         ]);
 
         let mut rasterizer = Rasterizer::new();
