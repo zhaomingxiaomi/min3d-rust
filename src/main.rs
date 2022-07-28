@@ -5,9 +5,7 @@ use iced::{
     Slider, Text, Image, image::Handle,
 };
 
-use math::matrix::Matrix;
-use math::vector::{Vector, Color};
-
+use math::vector::{Vector4f, Color3f};
 use rasterizer::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix};
 use rasterizer::triangle::Triangle;
 
@@ -61,36 +59,36 @@ impl Sandbox for Example {
 		}
         let mut triangle1 = Triangle::new();
         triangle1.set_colors(vec![
-            Color {r: 1.0, g:0.0, b:0.0}, 
-            Color {r: 1.0, g:0.0, b:0.0},
-            Color {r: 1.0, g:0.0, b:0.0},
+            Color3f::new_3(1.0, 0.0, 0.0), 
+            Color3f::new_3(1.0, 0.0, 0.0),
+            Color3f::new_3(1.0, 0.0, 0.0),
         ]);
 
         triangle1.set_vertexs(vec![
-            Vector { x: 2.0, y:-2.0, z: -1.0, w: 1.0 },
-            Vector { x: 0.0, y: 2.0, z: -20.0, w: 1.0 },
-            Vector { x: -3.0, y: -2.0, z: -5.0, w: 1.0 }
+            Vector4f::new_4(2.0, -2.0, -1.0, 1.0),
+            Vector4f::new_4(0.0, 2.0, -20.0, 1.0),
+            Vector4f::new_4(-3.0, -2.0, -5.0, 1.0)
         ]);
 
         let mut triangle2 = Triangle::new();
         triangle2.set_colors(vec![
-            Color {r: 0.0, g:1.0, b:0.0}, 
-            Color {r: 0.0, g:1.0, b:0.0},
-            Color {r: 0.0, g:1.0, b:0.0},
+            Color3f::new_3(0.0, 1.0, 0.0), 
+            Color3f::new_3(0.0, 1.0, 0.0),
+            Color3f::new_3(0.0, 1.0, 0.0),
         ]);
 
         triangle2.set_vertexs(vec![
-            Vector { x: 1.0, y:-2.0, z: -5.0, w: 1.0 },
-            Vector { x: 0.0, y: 4.0, z: -10.0, w: 1.0 },
-            Vector { x: -3.0, y: -2.0, z: -1.0, w: 1.0 }
+            Vector4f::new_4(1.0, -2.0, -5.0, 1.0),
+            Vector4f::new_4(0.0, 4.0, -10.0, 1.0),
+            Vector4f::new_4(-3.0, -2.0, -1.0, 1.0)
         ]);
 
         let mut rasterizer = Rasterizer::new();
         rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 60.0 / 50.0));
         rasterizer.set_view(get_view_matrix(
-            Vector::new(0.0, 0.0, 5.0, 1.0),
-            Vector::new(0.0, 0.0, 0.0, 1.0),
-            Vector::new(0.0, 1.0, 0.0, 1.0)
+            Vector4f::new_4(0.0, 0.0, 3.0, 1.0),
+            Vector4f::new_4(0.0, 0.0, 0.0, 1.0),
+            Vector4f::new_4(0.0, 1.0, 0.0, 1.0)
         ));
 
         rasterizer.set_projection(get_presp_projection_matrix(60.0, 1.0, -0.1, -50.0));

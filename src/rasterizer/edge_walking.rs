@@ -1,4 +1,4 @@
-use crate::math::{utils::clamp, vector::{Vector, Color, Point2f, Point3f}};
+use crate::math::{utils::clamp, vector::{Vector4f, Color3f, Point2f, Point3f}};
 
 use super::triangle::{Vertex, vertex_interp, Triangle};
 
@@ -41,18 +41,18 @@ impl<'a> Default for Trapezoid<'a> {
 fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Trapezoid<'a>> {
     let mut traps = Vec::new();
     let (min, mid, max) = {
-        if p0.v.y > p1.v.y {
-            if p0.v.y < p2.v.y {
+        if p0.v.y() > p1.v.y() {
+            if p0.v.y() < p2.v.y() {
                 (p1, p0, p2)
-            } else if p1.v.y > p2.v.y {
+            } else if p1.v.y() > p2.v.y() {
                 (p2, p1, p0)
             } else {
                 (p1, p2, p0)
             }
         } else {
-            if p1.v.y < p2.v.y {
+            if p1.v.y() < p2.v.y() {
                 (p0, p1, p2)
-            } else if p0.v.y > p2.v.y {
+            } else if p0.v.y() > p2.v.y() {
                 (p2, p0, p1)
             } else {
                 (p0, p2, p1)
@@ -60,17 +60,17 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
         }
     };
 
-    if min.v.y == mid.v.y && min.v.y == max.v.y {
+    if min.v.y() == mid.v.y() && min.v.y() == max.v.y() {
         return traps;
-    } else if min.v.x == mid.v.x && min.v.x == max.v.x {
+    } else if min.v.x() == mid.v.x() && min.v.x() == max.v.x() {
         return traps;
     }
 
-    if min.v.y == mid.v.y {
+    if min.v.y() == mid.v.y() {
         let mut t: Trapezoid = Trapezoid::default();
-        t.t = min.v.y;
-        t.b = max.v.y;
-        if min.v.x < mid.v.x {
+        t.t = min.v.y();
+        t.b = max.v.y();
+        if min.v.x() < mid.v.x() {
             t.l1 = Some(min);
             t.l2 = Some(max);
 
@@ -90,11 +90,11 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
         return traps;
     }
 
-    if max.v.y == mid.v.y {
+    if max.v.y() == mid.v.y() {
         let mut t: Trapezoid = Trapezoid::default();
-        t.t = min.v.y;
-        t.b = max.v.y;
-        if max.v.x < mid.v.x {
+        t.t = min.v.y();
+        t.b = max.v.y();
+        if max.v.x() < mid.v.x() {
             t.l1 = Some(min);
             t.l2 = Some(max);
 
@@ -117,13 +117,13 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
     let mut t1 = Trapezoid::default();
     let mut t2 = Trapezoid::default();
 
-    t1.t = min.v.y;
-    t1.b = mid.v.y;
-    t2.t = mid.v.y;
-    t2.b = max.v.y;
+    t1.t = min.v.y();
+    t1.b = mid.v.y();
+    t2.t = mid.v.y();
+    t2.b = max.v.y();
 
     //直接判断mid和max的x值，小的在左边
-    if mid.v.x < max.v.x {
+    if mid.v.x() < max.v.x() {
         t1.l1 = Some(min);
         t1.l2 = Some(mid);
         t1.r1 = Some(min);
@@ -153,10 +153,10 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
 
 fn trapezoid_interpation(trap: &mut Trapezoid, y: f32) {
 
-    let s1 = trap.l2.unwrap().v.y - trap.l1.unwrap().v.y;
-    let s2 = trap.r2.unwrap().v.y - trap.r1.unwrap().v.y;
-    let y1 = clamp((y - trap.l1.unwrap().v.y) / s1, 0.0, 1.0);
-    let y2 = clamp((y - trap.r1.unwrap().v.y) / s2, 0.0, 1.0);
+    let s1 = trap.l2.unwrap().v.y() - trap.l1.unwrap().v.y();
+    let s2 = trap.r2.unwrap().v.y() - trap.r1.unwrap().v.y();
+    let y1 = clamp((y - trap.l1.unwrap().v.y()) / s1, 0.0, 1.0);
+    let y2 = clamp((y - trap.r1.unwrap().v.y()) / s2, 0.0, 1.0);
 
 
     trap.l = Some(vertex_interp(&trap.l1.unwrap(), &trap.l2.unwrap(), y1));
@@ -166,27 +166,26 @@ fn trapezoid_interpation(trap: &mut Trapezoid, y: f32) {
 fn trapezoid_get_step(trap: &Trapezoid) -> Vertex {
     let r = trap.r.as_ref().unwrap();
     let l = trap.l.as_ref().unwrap();
-    let w = 1.0 / (r.v.x - l.v.x);
+    let w = 1.0 / (r.v.x() - l.v.x());
     Vertex {
-        v: Vector { 
-            x: (r.v.x - l.v.x) * w, 
-            y: (r.v.y - l.v.y) * w, 
-            z: (r.v.z - l.v.z) * w, 
-            w: (r.v.w - l.v.w) * w},
-        color: Color {
-            r: (r.color.r - l.color.r) * w, 
-            g: (r.color.g - l.color.g) * w, 
-            b: (r.color.b - l.color.b) * w, 
-        },
+        v: Vector4f::new_4(
+            (r.v.x() - l.v.x()) * w, 
+            (r.v.y() - l.v.y()) * w, 
+            (r.v.z() - l.v.z()) * w, 
+            (r.v.w() - l.v.w()) * w),
+        color: Color3f::new_3(
+            (r.color.r() - l.color.r()) * w, 
+            (r.color.g() - l.color.g()) * w, 
+            (r.color.b() - l.color.b()) * w),
 
-        tex_coords: Point2f::default(),
-        normal: Point3f::default(),
+        tex_coords: Point2f::new(),
+        normal: Point3f::new(),
     }
 }
 
 fn trapezoid_init_scanline(trap: &Trapezoid, y: i32) -> Scanline {
-    let w = trap.r.as_ref().unwrap().v.x.round() as i32 - trap.l.as_ref().unwrap().v.x.round() as i32;
-    let x = trap.l.as_ref().unwrap().v.x.round() as i32;
+    let w = trap.r.as_ref().unwrap().v.x().round() as i32 - trap.l.as_ref().unwrap().v.x().round() as i32;
+    let x = trap.l.as_ref().unwrap().v.x().round() as i32;
 
     Scanline { 
         step: trapezoid_get_step(trap),
@@ -198,10 +197,10 @@ fn trapezoid_init_scanline(trap: &Trapezoid, y: i32) -> Scanline {
 
 fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, zbuf: &mut Vec<f32>, trap: &Trapezoid, scanline: &Scanline) {
     let start = trap.l.as_ref().unwrap();
-    let mut r = start.color.r;
-    let mut g = start.color.g;
-    let mut b = start.color.b;
-    let mut z = start.v.z;
+    let mut r = start.color.r();
+    let mut g = start.color.g();
+    let mut b = start.color.b();
+    let mut z = start.v.z();
 
 
     for i in 0..scanline.w {
@@ -219,10 +218,10 @@ fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, zbuf: &mut Vec<f32>,
             image[(index * 4 + 3) as usize] = 255;
         }
 
-        r += scanline.step.color.r;
-        g += scanline.step.color.g;
-        b += scanline.step.color.b;
-        z += scanline.step.v.z;
+        r += scanline.step.color.r();
+        g += scanline.step.color.g();
+        b += scanline.step.color.b();
+        z += scanline.step.v.z();
     }
 }
 

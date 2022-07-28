@@ -1,33 +1,35 @@
-use crate::math::{matrix::Matrix, vector::{Vector}};
+use std::ops::Sub;
+
+use crate::math::{matrix::Mat4x4f, vector::{Vector, Vector4f}};
 use super::{triangle::{Triangle}, edge_walking::draw_trangle_edge_walking, edge_equation::draw_trangle_edge_equation};
 
 pub struct Rasterizer {
-    model: Matrix,
-    view: Matrix,
-    projection: Matrix,
-    mvp: Matrix,
+    model: Mat4x4f,
+    view: Mat4x4f,
+    projection: Mat4x4f,
+    mvp: Mat4x4f,
 }
 
 impl Rasterizer {
     pub fn new() -> Rasterizer {
         Rasterizer {
-            model: Matrix::identity(),
-            view: Matrix::identity(),
-            projection: Matrix::identity(),
-            mvp: Matrix::identity(),
+            model: Mat4x4f::identity(),
+            view: Mat4x4f::identity(),
+            projection: Mat4x4f::identity(),
+            mvp: Mat4x4f::identity(),
         }
     }
 
-    pub fn set_view(&mut self, m: Matrix) {
+    pub fn set_view(&mut self, m: Mat4x4f) {
         self.view = m;
 
     }
 
-    pub fn set_model(&mut self, m: Matrix) {
+    pub fn set_model(&mut self, m: Mat4x4f) {
         self.model = m;
     }
 
-    pub fn set_projection(&mut self, m: Matrix) {
+    pub fn set_projection(&mut self, m: Mat4x4f) {
         self.projection = m;
     }
 
@@ -59,67 +61,65 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     p3.reset_z(near, far);
 
     triangle.set_vertexs(vec![p1, p2, p3]);
-    draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
-    //draw_trangle_edge_equation(image, zbuf, width, height, &triangle);
+    //draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
+    draw_trangle_edge_equation(image, zbuf, width, height, &triangle);
 }
 
-pub fn get_view_matrix(eye: Vector, at: Vector, mut up: Vector) -> Matrix {
+pub fn get_view_matrix(eye: Vector4f, at: Vector4f, mut up: Vector4f) -> Mat4x4f {
     let mut g = at.sub(&eye);
     g.normlize();
     up.normlize();
     let mut x = g.cross_product(&up);
     x.normlize();
-    Matrix { 
-        m: vec![
-            vec![x.x, x.y, x.z, -eye.x],
-            vec![up.x, up.y, up.z, -eye.y],
-            vec![-g.x, -g.y, -g.z, -eye.z],
-            vec![0.0, 0.0, 0.0, 1.0]]
-    }
+    let m = vec![
+        vec![x.x(), x.y(), x.z(), -eye.x()],
+        vec![up.x(), up.y(), up.z(), -eye.y()],
+        vec![-g.x(), -g.y(), -g.z(), -eye.z()],
+        vec![0.0, 0.0, 0.0, 1.0]];
+    Mat4x4f::new_val(m)
 }
 
-pub fn get_view_port(width: f32, height: f32) -> Matrix {
-    Matrix { 
-        m: vec![
+pub fn get_view_port(width: f32, height: f32) -> Mat4x4f {
+    let m = vec![
             vec![width/2.0, 0.0, 0.0, width/2.0],
             vec![0.0, -height/2.0, 0.0, height/2.0],
             vec![0.0, 0.0, 1.0, 0.0],
             vec![0.0, 0.0, 0.0, 1.0],
-        ]
-    }
+        ];
+    
+    Mat4x4f::new_val(m)
 }
 
-pub fn get_model_matrix(angel: f32) -> Matrix {
+pub fn get_model_matrix(angel: f32) -> Mat4x4f {
     let r = std::f32::consts::PI * angel / 180.0;
-    Matrix {
-        m: vec![
+    let m = vec![
             vec![r.cos(), 0.0, r.sin(), 0.0],
             vec![0.0, 1.0, 0.0, 0.0],
             vec![-r.sin(), 0.0, r.cos(), 0.0],
             vec![0.0, 0.0, 0.0, 1.0],
-        ]
-    }
+        ];
+    Mat4x4f::new_val(m)
 }
 
-pub fn get_ortho_projection_matrix(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Matrix {
-    Matrix { 
-        m: vec![
+pub fn get_ortho_projection_matrix(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Mat4x4f {
+    let m1 = Mat4x4f::new_val( 
+        vec![
             vec![2.0/(r - l), 0.0, 0.0, 0.0],
             vec![0.0, 2.0/(t - b), 0.0, 0.0],
             vec![0.0, 0.0, 2.0/(n - f), 0.0],
             vec![0.0, 0.0, 0.0, 1.0],
-        ]
-    } * Matrix {
-        m: vec![
+        ]);
+    let m2 = Mat4x4f::new_val(
+        vec![
             vec![1.0, 0.0, 0.0, -(l+r)/2.0],
             vec![0.0, 1.0, 0.0, -(t+b)/2.0],
             vec![0.0, 0.0, 1.0, -(n+f)/2.0],
             vec![0.0, 0.0, 0.0, 1.0],
-        ]
-    }
+        ]);
+    m1.mul(&m2)
 }
 
-pub fn get_presp_projection_matrix(eye_fov: f32, aspect_ratio: f32, near: f32, far: f32) -> Matrix {
+pub fn get_presp_projection_matrix(eye_fov: f32, aspect_ratio: f32, near: f32, far: f32) -> Mat4x4f {
     let angle = eye_fov * std::f32::consts::PI / 180.0;
     //let height = near * angle.tan();
     //let width = height * aspect_ratio;
@@ -129,14 +129,13 @@ pub fn get_presp_projection_matrix(eye_fov: f32, aspect_ratio: f32, near: f32, f
     let l = -r;
     let b = -t;
 
-    get_ortho_projection_matrix(l, r, t, b, near, far) * Matrix {
-        m: vec![
+    get_ortho_projection_matrix(l, r, t, b, near, far).mul(&Mat4x4f::new_val(
+        vec![
             vec![near, 0.0, 0.0, 0.0],
             vec![0.0, near, 0.0, 0.0],
             vec![0.0, 0.0, near+far, -near*far],
             vec![0.0, 0.0, 1.0, 0.0],
-        ]
-    }
+        ]))
 
     // let v = Vector { x: 1.0, y:-2.0, z: -3.0, w: 1.0 };
     // let view = get_view_matrix(
