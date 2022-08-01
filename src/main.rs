@@ -1,10 +1,11 @@
 mod math;
 mod common;
-mod rasterizer;
+mod fixed_pipeline;
 
 use std::error::Error;
-use std::fs::File;
+use std::fs::{File, self};
 use std::io::{BufReader, BufRead};
+use std::path::Path;
 
 use iced::{
     slider, Alignment, Column, Container, Element, Length, Sandbox, Settings,
@@ -12,7 +13,7 @@ use iced::{
 };
 
 use math::vector::{Vector4f, Color3f, Vector2f, Vector3f};
-use rasterizer::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix};
+use fixed_pipeline::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix};
 use common::triangle::Triangle;
 use common::texture::Texture;
 
@@ -36,11 +37,11 @@ impl Sandbox for Example {
     type Message = Message;
 
     fn new() -> Example {
-        let f = File::open("/Users/zhy_macbook/work/rust/mini3d-rust/objdata").unwrap();
+        let f = File::open(Path::new("./objdata")).unwrap();
         let reader = BufReader::new(f);
         let lines = reader.lines();
         let mut idx = 0;
-        let texture = Texture::new(0, "/Users/zhy_macbook/work/rust/mini3d-rust/spot_texture.png");
+        let texture = Texture::new(0, "./spot_texture.png");
 
 
         let mut e = Example {
@@ -56,10 +57,10 @@ impl Sandbox for Example {
         let mut texcoords = Vec::new();
         lines.for_each(|line| {
             if let Ok(line) = line {
-                
                 if idx % 2 == 0 {
                     let all: Vec<&str> = line.split(",").collect();
-                    vetexs.push(Vector4f::new_4(all[0].parse::<f32>().unwrap(), all[1].parse::<f32>().unwrap(), all[2].parse::<f32>().unwrap(), 1.0));
+                    //翻转模型z值
+                    vetexs.push(Vector4f::new_4(all[0].parse::<f32>().unwrap(), all[1].parse::<f32>().unwrap(), -1.0 * all[2].parse::<f32>().unwrap(), 1.0));
                 } else {
                     let all: Vec<&str> = line.split(",").collect();
                     texcoords.push(Vector2f::new_2(all[0].parse::<f32>().unwrap(), all[1].parse::<f32>().unwrap()));
@@ -69,7 +70,7 @@ impl Sandbox for Example {
             }
         });
 
-        for i in 0..vetexs.len() / 3 {
+        for _ in 0..vetexs.len() / 3 {
             let mut t = Triangle::new();
             let mut v = Vec::new();
             let mut p = Vec::new();
@@ -143,7 +144,7 @@ impl Sandbox for Example {
         let mut rasterizer = Rasterizer::new();
         rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 60.0 / 50.0));
         rasterizer.set_view(get_view_matrix(
-            Vector4f::new_4(0.0, 0.0, 3.0, 1.0),
+            Vector4f::new_4(0.0, 0.0, 2.0, 1.0),
             Vector4f::new_4(0.0, 0.0, 0.0, 1.0),
             Vector4f::new_4(0.0, 1.0, 0.0, 1.0)
         ));
@@ -151,7 +152,7 @@ impl Sandbox for Example {
         rasterizer.set_projection(get_presp_projection_matrix(60.0, 1.0, -0.1, -50.0));
         rasterizer.compute_mvp();
 
-        let mut zbuf: Vec<f32> = vec![20.0; 512*512];
+        let mut zbuf: Vec<f32> = vec![-51.0; 512*512];
         for t in self.t.iter_mut() {
             draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 512, 512, t, &self.texture);
         }

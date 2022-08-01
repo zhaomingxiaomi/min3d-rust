@@ -100,7 +100,7 @@ pub fn draw_trangle_edge_equation(
                             compute_barycentric_2d(i as f32 + 0.5, j as f32 + 0.5, triangle);
         
                         let z = alpha * triangle.vertexs[0].v.z() + beta * triangle.vertexs[1].v.z() + gamma * triangle.vertexs[2].v.z();
-                        if z > zbuf[(width * j + i) as usize] {
+                        if z < zbuf[(width * j + i) as usize] {
                             continue;
                         }
         
