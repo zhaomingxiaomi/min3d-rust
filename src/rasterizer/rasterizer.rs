@@ -1,7 +1,7 @@
-use std::ops::Sub;
 
-use crate::math::{matrix::Mat4x4f, vector::{Vector, Vector4f}};
-use super::{triangle::{Triangle}, edge_walking::draw_trangle_edge_walking, edge_equation::draw_trangle_edge_equation};
+use crate::{math::{matrix::Mat4x4f, vector::{Vector4f}}, common::texture::Texture};
+use crate::common::triangle::Triangle;
+use super::{edge_walking::draw_trangle_edge_walking, edge_equation::draw_trangle_edge_equation};
 
 pub struct Rasterizer {
     model: Mat4x4f,
@@ -45,10 +45,13 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     far: f32,
     width: i32, 
     height: i32, 
-    mut triangle: Triangle) {
-    let t1 = rasterizer.mvp.apply(&triangle.vertexs[0].v);
-    let t2 = rasterizer.mvp.apply(&triangle.vertexs[1].v);
-    let t3 = rasterizer.mvp.apply(&triangle.vertexs[2].v);
+    triangle: &mut Triangle,
+    textures: &Vec<Texture>
+) {
+    let t1 = rasterizer.mvp.apply(&triangle.vertexs[0].origin_v);
+    let t2 = rasterizer.mvp.apply(&triangle.vertexs[1].origin_v);
+    let t3 = rasterizer.mvp.apply(&triangle.vertexs[2].origin_v);
+
 
     let view_port = get_view_port(width as f32, height as f32);
     let mut p1 = view_port.apply(&t1);
@@ -60,9 +63,13 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     p2.reset_z(near, far);
     p3.reset_z(near, far);
 
+    //println!("{:?}", p1);
+    //println!("{:?}", p2);
+    //println!("{:?}", p3);
     triangle.set_vertexs(vec![p1, p2, p3]);
+
     //draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
-    draw_trangle_edge_equation(image, zbuf, width, height, &triangle);
+    draw_trangle_edge_equation(image, zbuf, width, height, triangle, textures);
 }
 
 pub fn get_view_matrix(eye: Vector4f, at: Vector4f, mut up: Vector4f) -> Mat4x4f {
@@ -136,25 +143,4 @@ pub fn get_presp_projection_matrix(eye_fov: f32, aspect_ratio: f32, near: f32, f
             vec![0.0, 0.0, near+far, -near*far],
             vec![0.0, 0.0, 1.0, 0.0],
         ]))
-
-    // let v = Vector { x: 1.0, y:-2.0, z: -3.0, w: 1.0 };
-    // let view = get_view_matrix(
-    //     Vector::new(0.0, 0.0, 5.0, 1.0),
-    //     Vector::new(0.0, 0.0, 0.0, 1.0),
-    //     Vector::new(0.0, 1.0, 0.0, 1.0)
-    // );
-
-    // let r1 = view.apply(&v);
-    
-    // let prop = Matrix {
-    //         m: vec![
-    //             vec![near.abs(), 0.0, 0.0, 0.0],
-    //             vec![0.0, near.abs(), 0.0, 0.0],
-    //             vec![0.0, 0.0, near.abs()+far.abs(), -near.abs()*far.abs()],
-    //             vec![0.0, 0.0, 1.0, 0.0],
-    //         ]
-    //     };
-    // let r2 = prop.apply(&r1);
-
-    //get_ortho_projection_matrix(l, r, t, b, near, far)
 }

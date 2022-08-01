@@ -10,7 +10,7 @@ pub type Color3f = Vector<3, f32>;
 pub type Point3f = Vector<3, f32>;
 pub type Point2f = Vector<2, f32>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Vector<const N: usize, T> {
     pub v: Vec<T>
 }

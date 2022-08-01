@@ -1,6 +1,6 @@
 use crate::math::{utils::clamp, vector::{Vector4f, Color3f, Point2f, Point3f}};
 
-use super::triangle::{Vertex, vertex_interp, Triangle};
+use crate::common::triangle::{Vertex, vertex_interp, Triangle};
 
 struct Trapezoid<'a > {
     t: f32,
@@ -168,6 +168,7 @@ fn trapezoid_get_step(trap: &Trapezoid) -> Vertex {
     let l = trap.l.as_ref().unwrap();
     let w = 1.0 / (r.v.x() - l.v.x());
     Vertex {
+        origin_v: Vector4f::new(),
         v: Vector4f::new_4(
             (r.v.x() - l.v.x()) * w, 
             (r.v.y() - l.v.y()) * w, 
