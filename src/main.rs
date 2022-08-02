@@ -153,11 +153,26 @@ impl Sandbox for Example {
         rasterizer.compute_mvp();
 
         let mut zbuf: Vec<f32> = vec![-51.0; 512*512];
+        let mut c = 0;
         for t in self.t.iter_mut() {
+            c += 1;
+            // if c < 2000 {
+            //     continue;
+            // }
+
+            
             draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 512, 512, t, &self.texture);
         }
         //draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 256, 256, triangle1);
         //draw_trangle(&rasterizer, &mut image, &mut zbuf , -0.1, -50.0, 256, 256, triangle2);
+
+        // let mut imgbuf = image::ImageBuffer::new(512, 512);
+
+        // // Iterate over the coordinates and pixels of the image
+        // for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
+        //     *pixel = image::Rgb([image[((512*y+x)*4+2) as usize], image[((512*y+x)*4+1) as usize], image[((512*y+x)*4) as usize]]);
+        // }
+        // imgbuf.save("b.png").unwrap();
 
         let handle = Handle::from_pixels(512, 512, image);
         let content = Column::new()

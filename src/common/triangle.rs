@@ -21,6 +21,7 @@ pub struct Vertex {
     pub color: Color3f,
     pub tex_coords: Point2f,
     pub normal: Point3f,
+    pub rhw: f32
 }
 
 pub fn vertex_interp(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
@@ -33,20 +34,21 @@ pub fn vertex_interp(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
             interpolation(v1.color.b(), v2.color.b(), t), 
         ),
         tex_coords: Point2f::new_2(
-            interpolation(v1.tex_coords.x(), v2.tex_coords.x(), t),
-            interpolation(v1.tex_coords.y(), v2.tex_coords.y(), t),
+            interpolation(v1.tex_coords.u(), v2.tex_coords.u(), t),
+            interpolation(v1.tex_coords.v(), v2.tex_coords.v(), t),
         ),
         normal: Point3f::new_3(
             interpolation(v1.normal.x(), v2.normal.x(), t),
             interpolation(v1.normal.y(), v2.normal.y(), t),
-            interpolation(v1.normal.y(), v2.normal.y(), t),
+            interpolation(v1.normal.z(), v2.normal.z(), t),
         ),
+        rhw: interpolation(v1.rhw, v2.rhw, t)
     }
 }
 
 impl Default for Vertex {
     fn default() -> Self {
-        Self { origin_v: Vector4f::new(), v: Vector4f::new(), color: Color3f::new(), tex_coords: Point2f::new(), normal: Point3f::new() }
+        Self { origin_v: Vector4f::new(), v: Vector4f::new(), color: Color3f::new(), tex_coords: Point2f::new(), normal: Point3f::new(), rhw: 1.0 }
     }
 }
 
@@ -69,8 +71,10 @@ impl<'a> Triangle {
         }
     }
 
-    pub fn set_vertexs(&mut self, v: Vec<Vector4f>) {
+    pub fn set_vertexs(&mut self, mut v: Vec<Vector4f>) {
         for i in 0..v.len() {
+            self.vertexs[i].rhw =  1.0 / v[i].w();
+            v[i].divide_w();
             self.vertexs[i].v = v[i].clone();
         }
     }

@@ -1,4 +1,4 @@
-use crate::math::{utils::clamp, vector::{Vector4f, Color3f, Point2f, Point3f}};
+use crate::{math::{utils::clamp, vector::{Vector4f, Color3f, Point2f, Point3f}}, common::{triangle::{RenderType, self}, texture::Texture}};
 
 use crate::common::triangle::{Vertex, vertex_interp, Triangle};
 
@@ -122,8 +122,37 @@ fn trapezoid_init<'a>(p0: &'a Vertex, p1: &'a Vertex, p2: &'a Vertex) -> Vec<Tra
     t2.t = mid.v.y();
     t2.b = max.v.y();
 
-    //直接判断mid和max的x值，小的在左边
-    if mid.v.x() < max.v.x() {
+    //wrong: 直接判断mid和max的x值，小的在左边
+    //需要判断min
+    // if mid.v.x() < max.v.x() {
+    //     t1.l1 = Some(min);
+    //     t1.l2 = Some(mid);
+    //     t1.r1 = Some(min);
+    //     t1.r2 = Some(max);
+    // } else {
+    //     t1.l1 = Some(min);
+    //     t1.l2 = Some(max);
+    //     t1.r1 = Some(min);
+    //     t1.r1 = Some(mid);
+    // }
+
+    // if mid.v.x() < min.v.x() {
+    //     t2.l1 = Some(mid);
+    //     t2.l2 = Some(max);
+    //     t2.r1 = Some(min);
+    //     t2.r2 = Some(max);
+    // } else {
+    //     t2.l1 = Some(min);
+    //     t2.l2 = Some(max);
+    //     t2.r1 = Some(mid);
+    //     t2.r2 = Some(max);
+    // }
+
+
+
+    let f = (mid.v.y() - max.v.y()) / (min.v.y() - max.v.y());
+    let x = max.v.x() + f * (min.v.x() - max.v.x());
+    if mid.v.x() < x {
         t1.l1 = Some(min);
         t1.l2 = Some(mid);
         t1.r1 = Some(min);
@@ -158,7 +187,6 @@ fn trapezoid_interpation(trap: &mut Trapezoid, y: f32) {
     let y1 = clamp((y - trap.l1.unwrap().v.y()) / s1, 0.0, 1.0);
     let y2 = clamp((y - trap.r1.unwrap().v.y()) / s2, 0.0, 1.0);
 
-
     trap.l = Some(vertex_interp(&trap.l1.unwrap(), &trap.l2.unwrap(), y1));
     trap.r = Some(vertex_interp(&trap.r1.unwrap(), &trap.r2.unwrap(), y2));
 }
@@ -179,8 +207,12 @@ fn trapezoid_get_step(trap: &Trapezoid) -> Vertex {
             (r.color.g() - l.color.g()) * w, 
             (r.color.b() - l.color.b()) * w),
 
-        tex_coords: Point2f::new(),
+        tex_coords: Point2f::new_2(
+            (r.tex_coords.u() - l.tex_coords.u()) * w, 
+            (r.tex_coords.v() - l.tex_coords.v()) * w, 
+        ),
         normal: Point3f::new(),
+        rhw: (r.rhw - l.rhw) * w, 
     }
 }
 
@@ -196,39 +228,74 @@ fn trapezoid_init_scanline(trap: &Trapezoid, y: i32) -> Scanline {
     }
 }
 
-fn trapezoid_draw_scanline(image: &mut Vec<u8>, width: i32, zbuf: &mut Vec<f32>, trap: &Trapezoid, scanline: &Scanline) {
+fn trapezoid_draw_scanline(image: &mut Vec<u8>, render: &RenderType, width: i32, zbuf: &mut Vec<f32>, trap: &Trapezoid, scanline: &Scanline, textures: &Vec<Texture>, triangle: &Triangle) {
     let start = trap.l.as_ref().unwrap();
-    let mut r = start.color.r();
-    let mut g = start.color.g();
-    let mut b = start.color.b();
-    let mut z = start.v.z();
-
-
-    for i in 0..scanline.w {
-        if scanline.x + i < 0 || scanline.x + i >= width {continue;}
-        let index = width * scanline.y + scanline.x + i;
-        if z >= zbuf[index as usize] {
-            zbuf[index as usize] = z;
-            let cur_r = clamp((255.0 * r) as i32, 0, 255);
-            let cur_g = clamp((255.0 * g) as i32, 0, 255);
-            let cur_b = clamp((255.0 * b) as i32, 0, 255);
-    
-            image[(index * 4) as usize] = cur_b as u8;
-            image[(index * 4 + 1) as usize] = cur_g as u8;
-            image[(index * 4 + 2) as usize] = cur_r as u8;
-            image[(index * 4 + 3) as usize] = 255;
+    match render {
+        RenderType::COLOR => {
+            let mut r = start.color.r();
+            let mut g = start.color.g();
+            let mut b = start.color.b();
+            let mut z = start.v.z();
+        
+            
+            for i in 0..scanline.w {
+                if scanline.x + i < 0 || scanline.x + i >= width {continue;}
+                let index = width * scanline.y + scanline.x + i;
+                if z >= zbuf[index as usize] {
+                    zbuf[index as usize] = z;
+                    let cur_r = clamp((255.0 * r) as i32, 0, 255);
+                    let cur_g = clamp((255.0 * g) as i32, 0, 255);
+                    let cur_b = clamp((255.0 * b) as i32, 0, 255);
+            
+                    image[(index * 4) as usize] = cur_b as u8;
+                    image[(index * 4 + 1) as usize] = cur_g as u8;
+                    image[(index * 4 + 2) as usize] = cur_r as u8;
+                    image[(index * 4 + 3) as usize] = 255;
+                }
+        
+                r += scanline.step.color.r();
+                g += scanline.step.color.g();
+                b += scanline.step.color.b();
+                z += scanline.step.v.z();
+            }
         }
-
-        r += scanline.step.color.r();
-        g += scanline.step.color.g();
-        b += scanline.step.color.b();
-        z += scanline.step.v.z();
+        RenderType::TEXTURE => {
+            let mut u = start.tex_coords.u();
+            let mut v = start.tex_coords.v();
+            let mut z = start.v.z();
+            for i in 0..scanline.w {
+                if scanline.x + i < 0 || scanline.x + i >= width {
+                    continue;
+                }
+                let index = width * scanline.y + scanline.x + i;
+                if z >= zbuf[index as usize] {
+                    zbuf[index as usize] = z;
+                    {
+                        let (r, g, b) = textures[0].get_color(u, 1.0-v);
+                        image[(index * 4) as usize] = b;
+                        image[(index * 4 + 1) as usize] = g;
+                        image[(index * 4 + 2) as usize] = r;
+                        image[(index * 4 + 3) as usize] = 255;
+                    }
+                }
+        
+                u += scanline.step.tex_coords.u();
+                v += scanline.step.tex_coords.v();
+                z += scanline.step.v.z();
+            }
+        }
     }
+
 }
 
 fn trapezoid_draw(image: &mut Vec<u8>, 
+    rendertype: &RenderType,
     width: i32, 
-    height: i32, zbuf: &mut Vec<f32>, trap: &mut Trapezoid) {
+    height: i32, 
+    zbuf: &mut Vec<f32>, 
+    trap: &mut Trapezoid, 
+    textures: &Vec<Texture>,
+    triangle: &Triangle) {
     let t = trap.t.floor() as i32;
     let b = trap.b.floor() as i32;
 
@@ -236,20 +303,35 @@ fn trapezoid_draw(image: &mut Vec<u8>,
         if i >= 0 && i < height {
             trapezoid_interpation(trap, i as f32 + 0.5);
             let scanline = trapezoid_init_scanline(trap, i);
-            trapezoid_draw_scanline(image, width, zbuf, trap, &scanline);
+            if scanline.w < 0 {
+                //panic!("wrong situtation!");
+                println!("Wrong situtation!, w = {}", scanline.w);
+                // let mut traps = trapezoid_init(&triangle.vertexs[0], &triangle.vertexs[1], &triangle.vertexs[2]);
+                // println!("{:?}", traps[0].l1.unwrap().v);
+                // println!("{:?}", traps[0].l2.unwrap().v);
+                // println!("{:?}", traps[0].r1.unwrap().v);
+                // println!("{:?}", traps[0].r2.unwrap().v);
+            
+                // println!("{:?}", traps[0].l1.unwrap().v);
+                // println!("{:?}", traps[0].l2.unwrap().v);
+                // println!("{:?}", traps[0].r1.unwrap().v);
+                // println!("{:?}", traps[0].r2.unwrap().v);
+
+            }
+            trapezoid_draw_scanline(image, rendertype, width, zbuf, trap, &scanline, textures, triangle);
         }
     }
 }
 
-pub fn draw_trangle_edge_walking(image: &mut Vec<u8>, zbuf: &mut Vec<f32>, width: i32, height: i32, triangle: &Triangle) {
+pub fn draw_trangle_edge_walking(image: &mut Vec<u8>, zbuf: &mut Vec<f32>, width: i32, height: i32, triangle: &Triangle, textures: &Vec<Texture>) {
     let mut traps = trapezoid_init(&triangle.vertexs[0], &triangle.vertexs[1], &triangle.vertexs[2]);
     if traps.len() >= 1 {
         let trap = &mut traps[0];
-        trapezoid_draw(image, width, height, zbuf, trap);
+        trapezoid_draw(image, &triangle.render, width, height, zbuf, trap, textures, triangle);
     }
 
     if traps.len() >= 2 {
         let trap = &mut traps[1];
-        trapezoid_draw(image, width, height, zbuf, trap);
+        trapezoid_draw(image, &triangle.render, width, height, zbuf, trap, textures, triangle);
     }
 }

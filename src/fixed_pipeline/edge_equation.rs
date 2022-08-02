@@ -95,7 +95,7 @@ pub fn draw_trangle_edge_equation(
                 RenderType::TEXTURE => {
                     if inside_triangle(i as f32 + 0.5, j as f32 + 0.5, &p1, &p2, &p3) {
                         //println!("{:?}, {:?}", i, j);
-        
+
                         let (alpha, beta, gamma) =
                             compute_barycentric_2d(i as f32 + 0.5, j as f32 + 0.5, triangle);
         
@@ -105,7 +105,6 @@ pub fn draw_trangle_edge_equation(
                         }
         
                         zbuf[(width * j + i) as usize] = z;
-        
                         let u = alpha * triangle.vertexs[0].tex_coords.u() + 
                                 beta * triangle.vertexs[1].tex_coords.u() + 
                                 gamma * triangle.vertexs[2].tex_coords.u();
@@ -116,10 +115,12 @@ pub fn draw_trangle_edge_equation(
 
                         
                         let (r, g, b) = textures[0].get_color(u, 1.0-v);
-                        image[((width * j + i) * 4) as usize] = b;
-                        image[((width * j + i) * 4 + 1) as usize] = g;
-                        image[((width * j + i) * 4 + 2) as usize] = r;
-                        image[((width * j + i) * 4 + 3) as usize] = 255;
+                        {
+                            image[((width * j + i) * 4) as usize] = b;
+                            image[((width * j + i) * 4 + 1) as usize] = g;
+                            image[((width * j + i) * 4 + 2) as usize] = r;
+                            image[((width * j + i) * 4 + 3) as usize] = 255;
+                        }
                     }
                 }
             }

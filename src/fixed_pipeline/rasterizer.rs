@@ -52,24 +52,15 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     let t2 = rasterizer.mvp.apply(&triangle.vertexs[1].origin_v);
     let t3 = rasterizer.mvp.apply(&triangle.vertexs[2].origin_v);
 
-
     let view_port = get_view_port(width as f32, height as f32);
     let mut p1 = view_port.apply(&t1);
     let mut p2 = view_port.apply(&t2);
     let mut p3 = view_port.apply(&t3);
 
-    p1.divide_w(); p2.divide_w(); p3.divide_w();
-    p1.reset_z(near, far);
-    p2.reset_z(near, far);
-    p3.reset_z(near, far);
-
-    //println!("{:?}", p1);
-    //println!("{:?}", p2);
-    //println!("{:?}", p3);
     triangle.set_vertexs(vec![p1, p2, p3]);
 
-    //draw_trangle_edge_walking(image, zbuf, width, height, &triangle);
-    draw_trangle_edge_equation(image, zbuf, width, height, triangle, textures);
+    draw_trangle_edge_walking(image, zbuf, width, height, &triangle, textures);
+    //draw_trangle_edge_equation(image, zbuf, width, height, triangle, textures);
 }
 
 pub fn get_view_matrix(eye: Vector4f, at: Vector4f, mut up: Vector4f) -> Mat4x4f {
@@ -109,18 +100,19 @@ pub fn get_model_matrix(angel: f32) -> Mat4x4f {
 }
 
 pub fn get_ortho_projection_matrix(l: f32, r: f32, t: f32, b: f32, n: f32, f: f32) -> Mat4x4f {
+    //映射z到(-1,0)
     let m1 = Mat4x4f::new_val( 
         vec![
             vec![2.0/(r - l), 0.0, 0.0, 0.0],
             vec![0.0, 2.0/(t - b), 0.0, 0.0],
-            vec![0.0, 0.0, 2.0/(n - f), 0.0],
+            vec![0.0, 0.0, 1.0/(n - f), 0.0],
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
     let m2 = Mat4x4f::new_val(
         vec![
             vec![1.0, 0.0, 0.0, -(l+r)/2.0],
             vec![0.0, 1.0, 0.0, -(t+b)/2.0],
-            vec![0.0, 0.0, 1.0, -(n+f)/2.0],
+            vec![0.0, 0.0, 1.0, -(n+f+1.0)/2.0],
             vec![0.0, 0.0, 0.0, 1.0],
         ]);
     m1.mul(&m2)
