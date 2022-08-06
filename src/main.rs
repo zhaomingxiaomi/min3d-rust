@@ -6,6 +6,7 @@ use std::error::Error;
 use std::fs::{File, self};
 use std::io::{BufReader, BufRead};
 use std::path::Path;
+use std::process::id;
 
 use iced::{
     slider, Alignment, Column, Container, Element, Length, Sandbox, Settings,
@@ -16,6 +17,7 @@ use math::vector::{Vector4f, Color3f, Vector2f, Vector3f};
 use fixed_pipeline::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix};
 use common::triangle::Triangle;
 use common::texture::Texture;
+use common::light::Light;
 
 pub fn main() -> iced::Result {
     Example::run(Settings::default())
@@ -55,15 +57,19 @@ impl Sandbox for Example {
                 
         let mut vetexs = Vec::new();
         let mut texcoords = Vec::new();
+        let mut normals = Vec::new();
         lines.for_each(|line| {
             if let Ok(line) = line {
-                if idx % 2 == 0 {
+                if idx % 3 == 0 {
                     let all: Vec<&str> = line.split(",").collect();
                     //翻转模型z值
                     vetexs.push(Vector4f::new_4(all[0].parse::<f32>().unwrap(), all[1].parse::<f32>().unwrap(), -1.0 * all[2].parse::<f32>().unwrap(), 1.0));
-                } else {
+                } else if idx % 3 == 1 {
                     let all: Vec<&str> = line.split(",").collect();
                     texcoords.push(Vector2f::new_2(all[0].parse::<f32>().unwrap(), all[1].parse::<f32>().unwrap()));
+                } else {
+                    let all: Vec<&str> = line.split(",").collect();
+                    normals.push(Vector3f::new_3(all[0].parse::<f32>().unwrap(), all[1].parse::<f32>().unwrap(),all[2].parse::<f32>().unwrap()));
                 }
 
                 idx += 1;
@@ -74,6 +80,7 @@ impl Sandbox for Example {
             let mut t = Triangle::new();
             let mut v = Vec::new();
             let mut p = Vec::new();
+            let mut n = Vec::new();
             v.push(vetexs.remove(0));
             v.push(vetexs.remove(0));
             v.push(vetexs.remove(0));
@@ -81,9 +88,16 @@ impl Sandbox for Example {
             p.push(texcoords.remove(0));
             p.push(texcoords.remove(0));
             p.push(texcoords.remove(0));
+
+            n.push(normals.remove(0));
+            n.push(normals.remove(0));
+            n.push(normals.remove(0));
+
+
 
             t.set_origin_vertexs(v);
             t.set_tex_coords(p);
+            t.set_normal(n);
             t.set_render_type(common::triangle::RenderType::TEXTURE);
             e.t.push(t);
         }
@@ -142,7 +156,7 @@ impl Sandbox for Example {
         // ]);
 
         let mut rasterizer = Rasterizer::new();
-        rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 60.0 / 50.0));
+        rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 120.0 / 50.0));
         rasterizer.set_view(get_view_matrix(
             Vector4f::new_4(0.0, 0.0, 2.0, 1.0),
             Vector4f::new_4(0.0, 0.0, 0.0, 1.0),
@@ -151,16 +165,22 @@ impl Sandbox for Example {
 
         rasterizer.set_projection(get_presp_projection_matrix(60.0, 1.0, -0.1, -50.0));
         rasterizer.compute_mvp();
+        rasterizer.set_eye_pos(Vector3f::new_3(0.0, 0.0, 2.0));
+        rasterizer.set_lights(vec![
+            Light::new(            
+                Vector3f::new_3(20.0, 20.0, -20.0),
+                Vector3f::new_3(500.0, 500.0, 500.0)
+            ),
+            Light::new(            
+                Vector3f::new_3(20.0, -20.0, 0.0),
+                Vector3f::new_3(500.0, 500.0, 500.0)
+            ),
+            ]
+        );
+
 
         let mut zbuf: Vec<f32> = vec![-51.0; 512*512];
-        let mut c = 0;
         for t in self.t.iter_mut() {
-            c += 1;
-            // if c < 2000 {
-            //     continue;
-            // }
-
-            
             draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 512, 512, t, &self.texture);
         }
         //draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 256, 256, triangle1);

@@ -17,6 +17,7 @@ pub struct Triangle {
 #[derive(Clone)]
 pub struct Vertex {
     pub origin_v: Vector4f,
+    pub tv: Vector4f,
     pub v: Vector4f,
     pub color: Color3f,
     pub tex_coords: Point2f,
@@ -33,6 +34,7 @@ pub fn vertex_interp(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
             interpolation(v1.color.g(), v2.color.g(), t), 
             interpolation(v1.color.b(), v2.color.b(), t), 
         ),
+        tv: vector4f_interpolation(&v1.tv, &v2.tv, t),
         tex_coords: Point2f::new_2(
             interpolation(v1.tex_coords.u(), v2.tex_coords.u(), t),
             interpolation(v1.tex_coords.v(), v2.tex_coords.v(), t),
@@ -48,7 +50,7 @@ pub fn vertex_interp(v1: &Vertex, v2: &Vertex, t: f32) -> Vertex {
 
 impl Default for Vertex {
     fn default() -> Self {
-        Self { origin_v: Vector4f::new(), v: Vector4f::new(), color: Color3f::new(), tex_coords: Point2f::new(), normal: Point3f::new(), rhw: 1.0 }
+        Self { origin_v: Vector4f::new(), tv: Vector4f::new(), v: Vector4f::new(), color: Color3f::new(), tex_coords: Point2f::new(), normal: Point3f::new(), rhw: 1.0 }
     }
 }
 
@@ -68,6 +70,12 @@ impl<'a> Triangle {
     pub fn set_origin_vertexs(&mut self, v: Vec<Vector4f>) {
         for i in 0..v.len() {
             self.vertexs[i].origin_v = v[i].clone();
+        }
+    }
+
+    pub fn set_tvetexs(&mut self, v: Vec<Vector4f>) {
+        for i in 0..v.len() {
+            self.vertexs[i].tv = v[i].clone();
         }
     }
 

@@ -1,9 +1,15 @@
+use crate::common::light::compute_light;
 use crate::common::texture::Texture;
 use crate::common::triangle::{RenderType, Triangle};
+use crate::math::utils::{interpolate_vector2f, interpolate_vector3f, interpolate_vector4f};
+use crate::math::vector::Vector3f;
 use crate::math::{utils::clamp, vector::Vector4f};
+
+use super::rasterizer::Rasterizer;
 
 pub fn draw_trangle_edge_equation(
     image: &mut Vec<u8>,
+    rasterizer: &Rasterizer,
     zbuf: &mut Vec<f32>,
     width: i32,
     height: i32,
@@ -14,6 +20,7 @@ pub fn draw_trangle_edge_equation(
     let mut r = std::f32::MIN;
     let mut t = std::f32::MIN;
     let mut b = std::f32::MAX;
+
 
     for i in 0..triangle.vertexs.len() {
         l = clamp(triangle.vertexs[i].v.x().min(l), 0.0, (width - 1) as f32);
@@ -26,6 +33,7 @@ pub fn draw_trangle_edge_equation(
     let p1 = &triangle.vertexs[0].v;
     let p2 = &triangle.vertexs[1].v;
     let p3 = &triangle.vertexs[2].v;
+
 
     for i in l.round() as i32..=r.round() as i32 {
         for j in b.round() as i32..=t.round() as i32 {
@@ -105,26 +113,44 @@ pub fn draw_trangle_edge_equation(
                         }
         
                         zbuf[(width * j + i) as usize] = z;
-                        let u = alpha * triangle.vertexs[0].tex_coords.u() + 
-                                beta * triangle.vertexs[1].tex_coords.u() + 
-                                gamma * triangle.vertexs[2].tex_coords.u();
-                        
-                        let v = alpha * triangle.vertexs[0].tex_coords.v() + 
-                                beta * triangle.vertexs[1].tex_coords.v() + 
-                                gamma * triangle.vertexs[2].tex_coords.v();
 
-                        
-                        let (r, g, b) = textures[0].get_color(u, 1.0-v);
-                        {
-                            image[((width * j + i) * 4) as usize] = b;
-                            image[((width * j + i) * 4 + 1) as usize] = g;
-                            image[((width * j + i) * 4 + 2) as usize] = r;
-                            image[((width * j + i) * 4 + 3) as usize] = 255;
+                        let uv = interpolate_vector2f(&triangle.vertexs[0].tex_coords,
+                            &triangle.vertexs[1].tex_coords,
+                            &triangle.vertexs[2].tex_coords, alpha, beta, gamma);
+
+                        let mv = interpolate_vector4f(&triangle.vertexs[0].tv,
+                            &triangle.vertexs[1].tv,
+                            &triangle.vertexs[2].tv, alpha, beta, gamma);
+
+                        let n = interpolate_vector3f(&triangle.vertexs[0].normal,
+                            &triangle.vertexs[1].normal,
+                            &triangle.vertexs[2].normal, alpha, beta, gamma);
+
+                        let (mut r, mut g, mut b) = textures[0].get_color(uv.u(), 1.0-uv.v());
+
+                        if rasterizer.get_lights().len() > 0 {
+                            let result = compute_light(
+                                &Vector3f::new_3(mv.x(), mv.y(), mv.z()), 
+                                &n, 
+                                rasterizer.get_lights(),
+                                &Vector3f::new_3(0.005, 0.005, 0.005),
+                                &Vector3f::new_3(r as f32  / 255.0, g as f32 / 255.0, b as f32 / 255.0),
+                                &Vector3f::new_3(0.7937, 0.7937, 0.7937),
+                                rasterizer.get_eye_pos());
+
+                            r = (result.r() * 255.0) as u8;
+                            g = (result.g() * 255.0) as u8;
+                            b = (result.b() * 255.0) as u8;
                         }
+
+                        image[((width * j + i) * 4) as usize] = b;
+                        image[((width * j + i) * 4 + 1) as usize] = g;
+                        image[((width * j + i) * 4 + 2) as usize] = r;
+                        image[((width * j + i) * 4 + 3) as usize] = 255;
+
                     }
                 }
             }
-
         }
     }
 }

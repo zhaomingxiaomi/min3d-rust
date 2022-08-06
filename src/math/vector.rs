@@ -39,32 +39,6 @@ impl<T> Vector<4, T> where T: Default + Clone {
     }
 }
 
-impl<const N: usize, T> Vector<N, T> where T: Default + Clone + Add<Output = T> {
-    pub fn add(self, rhs: &Vector<N, T>) -> Vector<N, T> {
-        let mut r = Vec::new();
-        for i in 0..N {
-            r.push(self.v[i].clone() + rhs.v[i].clone());
-        }
-
-        Vector {
-            v: r
-        }
-    }
-}
-
-impl<const N: usize, T> Vector<N, T> where T: Default + Clone + Sub<Output = T> {
-    pub fn sub(self, rhs: &Vector<N, T>) -> Vector<N, T> {
-        let mut r = Vec::new();
-        for i in 0..N {
-            r.push(self.v[i].clone() - rhs.v[i].clone());
-        }
-
-        Vector {
-            v: r
-        }
-    }
-}
-
 impl<const N: usize> Vector<N, f32> {
     pub fn length(&self) -> f32 {
         let mut r = 0.0;
@@ -82,13 +56,35 @@ impl<const N: usize> Vector<N, f32> {
         }
     }
 
-    pub fn dot_product(&mut self, v2: &Vector<N, f32>) -> f32 {
+    pub fn dot_product(&self, v2: &Vector<N, f32>) -> f32 {
         let mut r = 0.0;
         for i in 0..self.v.len() {
             r += self.v[i] * v2.v[i];
         }
 
         r
+    }
+
+    pub fn sub(&self, other: &Vector<N, f32>) -> Vector<N, f32> {
+        let mut r = Vec::new();
+        for i in 0..N {
+            r.push(self.v[i].clone() - other.v[i].clone());
+        }
+
+        Vector {
+            v: r
+        }
+    }
+
+    pub fn add(&self, rhs: &Vector<N, f32>) -> Vector<N, f32> {
+        let mut r = Vec::new();
+        for i in 0..N {
+            r.push(self.v[i].clone() - rhs.v[i].clone());
+        }
+
+        Vector {
+            v: r
+        }
     }
 }
 
