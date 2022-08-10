@@ -2,28 +2,29 @@ mod math;
 mod common;
 mod fixed_pipeline;
 
-use std::error::Error;
 use std::fs::{File, self};
 use std::io::{BufReader, BufRead};
 use std::path::Path;
-use std::process::id;
+use rayon::iter::ParallelIterator;
+use rayon::iter::IntoParallelRefMutIterator;
 
+use iced::futures::executor::{ThreadPool, ThreadPoolBuilder};
 use iced::{
     slider, Alignment, Column, Container, Element, Length, Sandbox, Settings,
     Slider, Text, Image, image::Handle,
 };
 
-use math::vector::{Vector4f, Color3f, Vector2f, Vector3f};
-use fixed_pipeline::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix};
+use math::vector::{Vector4f, Vector2f, Vector3f};
+use fixed_pipeline::rasterizer::{Rasterizer, get_model_matrix, get_presp_projection_matrix, get_view_matrix, draw_trangle, get_ortho_projection_matrix, draw_trangle_map, RenderResult};
 use common::triangle::Triangle;
 use common::texture::Texture;
 use common::light::Light;
 
 pub fn main() -> iced::Result {
-    Example::run(Settings::default())
+    SoftRender::run(Settings::default())
 }
 
-struct Example {
+struct SoftRender {
     radius: f32,
     slider: slider::State,
     texture: Vec<Texture>,
@@ -35,18 +36,17 @@ enum Message {
     RadiusChanged(f32),
 }
 
-impl Sandbox for Example {
+impl Sandbox for SoftRender {
     type Message = Message;
 
-    fn new() -> Example {
+    fn new() -> SoftRender {
         let f = File::open(Path::new("./objdata")).unwrap();
         let reader = BufReader::new(f);
         let lines = reader.lines();
         let mut idx = 0;
         let texture = Texture::new(0, "./spot_texture.png");
 
-
-        let mut e = Example {
+        let mut e = SoftRender {
             radius: 50.0,
             slider: slider::State::new(),
             texture: Vec::new(),
@@ -156,7 +156,9 @@ impl Sandbox for Example {
         // ]);
 
         let mut rasterizer = Rasterizer::new();
-        rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 120.0 / 50.0));
+        rasterizer.set_model(get_model_matrix((self.radius as f32 - 50.0) * 180.0 / 50.0));
+        //rasterizer.set_model(get_model_matrix(0.0));
+
         rasterizer.set_view(get_view_matrix(
             Vector4f::new_4(0.0, 0.0, 2.0, 1.0),
             Vector4f::new_4(0.0, 0.0, 0.0, 1.0),
@@ -178,11 +180,29 @@ impl Sandbox for Example {
             ]
         );
 
-
         let mut zbuf: Vec<f32> = vec![-51.0; 512*512];
-        for t in self.t.iter_mut() {
-            draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 512, 512, t, &self.texture);
+        let res = self.t.par_iter_mut()
+        .map(|x| {
+            draw_trangle_map(&rasterizer, 512, 512, x, &self.texture)
+        })
+        .reduce(|| Vec::new(), |mut x, y| {
+            for r in y {
+                x.push(r);
+            }
+            x
+        });
+
+        for r in res {
+            if r.z > zbuf[r.idx as usize] {
+                image[r.idx as usize * 4] = r.b;
+                image[r.idx as usize * 4 + 1] = r.g;
+                image[r.idx as usize * 4 + 2] = r.r;
+                zbuf[r.idx as usize] = r.z;
+            }
         }
+        // for t in self.t.iter_mut() {
+        //     draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 512, 512, t, &self.texture);
+        // }
         //draw_trangle(&rasterizer, &mut image, &mut zbuf,-0.1, -50.0, 256, 256, triangle1);
         //draw_trangle(&rasterizer, &mut image, &mut zbuf , -0.1, -50.0, 256, 256, triangle2);
 

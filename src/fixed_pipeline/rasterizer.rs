@@ -3,7 +3,21 @@ use crate::{math::{matrix::Mat4x4f, vector::{Vector4f, Vector3f}}, common::textu
 use crate::common::triangle::Triangle;
 use crate::common::light::Light;
 
-use super::{edge_walking::draw_trangle_edge_walking, edge_equation::draw_trangle_edge_equation};
+use super::{edge_walking::draw_trangle_edge_walking, edge_equation::{draw_trangle_edge_equation, draw_trangle_edge_equation_result}};
+
+pub struct RenderResult {
+    pub idx: i32,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub z: f32
+}
+
+impl RenderResult {
+    pub fn new() -> RenderResult {
+        RenderResult { idx: 0, r: 0, g: 0, b: 0, z: 0.0 }
+    }
+}
 
 pub struct Rasterizer {
     model: Mat4x4f,
@@ -62,6 +76,31 @@ impl Rasterizer {
     }
 }
 
+pub fn draw_trangle_map(rasterizer: &Rasterizer, 
+    width: i32, 
+    height: i32, 
+    triangle: &mut Triangle,
+    textures: &Vec<Texture>
+) -> Vec<RenderResult> {
+    let t1 = rasterizer.mvp.apply(&triangle.vertexs[0].origin_v);
+    let t2 = rasterizer.mvp.apply(&triangle.vertexs[1].origin_v);
+    let t3 = rasterizer.mvp.apply(&triangle.vertexs[2].origin_v);
+
+    triangle.set_tvetexs(vec![
+        rasterizer.mv.apply(&triangle.vertexs[0].origin_v),
+        rasterizer.mv.apply(&triangle.vertexs[1].origin_v),
+        rasterizer.mv.apply(&triangle.vertexs[2].origin_v),
+        ]);
+
+    let view_port = get_view_port(width as f32, height as f32);
+    let mut p1 = view_port.apply(&t1);
+    let mut p2 = view_port.apply(&t2);
+    let mut p3 = view_port.apply(&t3);
+
+    triangle.set_vertexs(vec![p1, p2, p3]);
+    return draw_trangle_edge_equation_result(rasterizer, width, height, triangle, textures);
+}
+
 pub fn draw_trangle(rasterizer: &Rasterizer, 
     image: &mut Vec<u8>, 
     zbuf: &mut Vec<f32>,
@@ -76,7 +115,6 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
     let t2 = rasterizer.mvp.apply(&triangle.vertexs[1].origin_v);
     let t3 = rasterizer.mvp.apply(&triangle.vertexs[2].origin_v);
 
-
     triangle.set_tvetexs(vec![
         rasterizer.mv.apply(&triangle.vertexs[0].origin_v),
         rasterizer.mv.apply(&triangle.vertexs[1].origin_v),
@@ -90,8 +128,8 @@ pub fn draw_trangle(rasterizer: &Rasterizer,
 
     triangle.set_vertexs(vec![p1, p2, p3]);
 
-    draw_trangle_edge_walking(image, rasterizer, zbuf, width, height, &triangle, textures);
-    //draw_trangle_edge_equation(image, rasterizer, zbuf, width, height, triangle, textures);
+    //draw_trangle_edge_walking(image, rasterizer, zbuf, width, height, &triangle, textures);
+    draw_trangle_edge_equation(image, rasterizer, zbuf, width, height, triangle, textures);
 }
 
 pub fn get_view_matrix(eye: Vector4f, at: Vector4f, mut up: Vector4f) -> Mat4x4f {
