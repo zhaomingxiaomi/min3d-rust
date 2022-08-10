@@ -5,6 +5,7 @@ mod fixed_pipeline;
 use std::fs::{File, self};
 use std::io::{BufReader, BufRead};
 use std::path::Path;
+use rayon::current_num_threads;
 use rayon::iter::ParallelIterator;
 use rayon::iter::IntoParallelRefMutIterator;
 
@@ -118,17 +119,7 @@ impl Sandbox for SoftRender {
     }
 
     fn view(&mut self) -> Element<Message> {
-		let mut image = Vec::new();
-		for i in 0..512 {
-			for j in 0..512 {
-                //if i < 128 && j < 128 {
-                    image.push(0u8);
-                    image.push(0u8);
-                    image.push(0u8);
-                    image.push(255u8);
-                //}
-			}
-		}
+		let mut image = vec![0 as u8; 512*512*4];
         // let mut triangle1 = Triangle::new();
         // triangle1.set_colors(vec![
         //     Color3f::new_3(1.0, 0.0, 0.0), 
@@ -181,23 +172,21 @@ impl Sandbox for SoftRender {
         );
 
         let mut zbuf: Vec<f32> = vec![-51.0; 512*512];
-        let res = self.t.par_iter_mut()
+        let res: Vec<Vec<RenderResult>> = self.t.par_iter_mut()
         .map(|x| {
             draw_trangle_map(&rasterizer, 512, 512, x, &self.texture)
         })
-        .reduce(|| Vec::new(), |mut x, y| {
-            for r in y {
-                x.push(r);
-            }
-            x
-        });
+        .collect();
 
-        for r in res {
-            if r.z > zbuf[r.idx as usize] {
-                image[r.idx as usize * 4] = r.b;
-                image[r.idx as usize * 4 + 1] = r.g;
-                image[r.idx as usize * 4 + 2] = r.r;
-                zbuf[r.idx as usize] = r.z;
+        for tmp in res {
+            for r in tmp {
+                if r.z > zbuf[r.idx as usize] {
+                    image[r.idx as usize * 4] = r.b;
+                    image[r.idx as usize * 4 + 1] = r.g;
+                    image[r.idx as usize * 4 + 2] = r.r;
+                    image[r.idx as usize * 4 + 3] = 255;
+                    zbuf[r.idx as usize] = r.z;
+                }
             }
         }
         // for t in self.t.iter_mut() {
